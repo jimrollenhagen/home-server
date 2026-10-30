@@ -52,6 +52,9 @@
   networking.firewall.allowedTCPPorts = [ 22 ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # root SSH is disabled above, so deployments run as jim. Pushing a closure over
+  # SSH needs the receiving user to be trusted, or nix-copy-closure is refused.
+  nix.settings.trusted-users = [ "jim" ];
   nix.gc = {
     automatic = true;
     dates = "weekly";

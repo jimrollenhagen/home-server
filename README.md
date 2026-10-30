@@ -19,6 +19,22 @@ Everything is driven from `modules/constants.nix`. Change an address there and r
 
 ## 0. Before you touch anything
 
+Pre-flight, in order — the first two are the ones that leave you with an unreachable
+box:
+
+- [ ] **Secure Boot disabled in firmware.** systemd-boot is unsigned; the install will
+      succeed and the machine will then refuse to boot.
+- [ ] **VLAN 10 exists on the UDM Pro** (README §1). The host's only address after
+      install is `10.10.10.10` on `vlan10`; without that network it comes up dark.
+- [ ] **NIC name is really `enp3s0`.** In the installer: `ip -br link`. If it differs,
+      change `iface` in `modules/constants.nix` *before* `nixos-install`.
+- [ ] **Array SATA cables unplugged.**
+- [ ] `ls -l /dev/disk/by-id/ | grep -v part` still matches the device in
+      `hosts/hyper/disko.nix`.
+- [ ] Enough RAM for 8 GB (plex) + 2 GB (edge) + the host. If the box is 16 GB, consider
+      trimming `memory` in `hosts/plex/domain.xml`.
+
+
 1. **Your media must exist somewhere other than `ark`.** disko wipes disks; the
    install wipes the boot SSD. Confirm you have a copy or accept the risk knowingly.
 2. **Unplug the array's SATA cables** for the install. Reconnect at step 4.
@@ -186,7 +202,7 @@ For DNS-01 instead (keeps 80 closed), follow the commented block in
     sudo nixos-rebuild switch --flake .#hyper
 
     # a guest, from your laptop
-    nixos-rebuild switch --flake .#plex --target-host root@10.20.0.20 --use-remote-sudo
+    nixos-rebuild switch --flake .#plex --target-host jim@10.20.0.20 --use-remote-sudo
 
 Rollback on the host: boot the previous generation in the systemd-boot menu, or
 `sudo nixos-rebuild switch --rollback`.
@@ -205,6 +221,6 @@ or you will capture runtime state.
 | `virsh start` fails, no useful error | virtiofs without `<memoryBacking><source type='memfd'/><access mode='shared'/></memoryBacking>` |
 | Guest boots, `/media` empty or EACCES | virtiofsd (as `qemu`) cannot read `/srv/ark/media`; fix group perms (§4) |
 | Guest has no network | NIC name in `hosts/<name>/default.nix` is not `eth0`, or VLAN not on the trunk |
-| `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`, or mgmt→guest 22 blocked on the router |
+| `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`; mgmt→guest 22 blocked on the router; or "user is not trusted" (guests set `nix.settings.trusted-users = [ "jim" ]` — deploy as `jim`, not root) |
 | Domain boots to GRUB rescue | image built with UEFI/systemd-boot but the domain is BIOS — guests here are BIOS only |
 | Plex cannot see the library | mount is `nofail`; check `systemctl status media.mount` and `journalctl -u virtiofsd` |

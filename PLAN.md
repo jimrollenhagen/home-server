@@ -493,7 +493,7 @@ reinstallable.
 
 ```bash
 nixos-rebuild switch --flake .#plex \
-  --target-host root@10.30.0.20 --use-remote-sudo
+  --target-host jim@10.20.0.20 --use-remote-sudo
 ```
 
 Builds on your workstation, pushes the closure, switches atomically. Same rollback story

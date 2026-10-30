@@ -15,6 +15,11 @@
   time.timeZone = "UTC";
 
   boot.loader.systemd-boot.enable = true;
+  # If the firmware refuses to write EFI variables ("cannot create EFI variable"
+  # during install), set this to false and add
+  #   boot.loader.efi.efiSysMountPoint = "/boot";
+  #   boot.loader.grub.efiInstallAsRemovable = ... (or use systemd-boot with
+  #   the removable path). Check `efibootmgr` output first.
   boot.loader.efi.canTouchEfiVariables = true;
 
   # SATA + USB in the initrd. Compare against the hardware-configuration.nix that
