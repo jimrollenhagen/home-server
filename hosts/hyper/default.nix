@@ -149,7 +149,7 @@
   system.autoUpgrade.enable = false; # you pick the moment
 
   services.zfs.autoScrub.enable = true;
-  services.zfs.trim.enable = true;
+  services.zfs.trim.enable = false;
   zramSwap.enable = true;
 
   environment.systemPackages = with pkgs; [
