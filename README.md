@@ -138,14 +138,17 @@ automatically. Confirm with `zpool status -x` after a reboot.
 
 ### Datasets and zvols
 
-`ark` has one filesystem today. Inspect where the media actually lives, then:
+**Media needs no preparation.** It is shared with the VM as a directory over virtiofs,
+not copied into a volume, so it stays exactly where it already is. The only requirement
+is that `hosts/plex/domain.xml` points at the real path — for this machine:
 
-    # if the data is at the pool root, create siblings and move (instant, same pool)
-    sudo zfs create ark/media
-    sudo mv /srv/ark/* /srv/ark/media/     # only if the root dataset holds the media
-    sudo zfs set recordsize=1M compression=zstd atime=off xattr=sa acltype=posixacl ark/media
+    <source dir='/srv/ark/ephemeral/media/media'/>
 
-    # guest disks — the parent dataset must exist first; `zfs create -p` also works
+Skip any `zfs create ark/media` / `mv`: that step existed to give the library its own
+dataset, which is a nicety (dataset properties, snapshot policy), not a requirement.
+
+Guest disks do need to exist, and the parent dataset first (`zfs create -p` also works):
+
     sudo zfs create ark/vm
     sudo zfs create -V 64G -s -o volblocksize=16K ark/vm/plex-os
     sudo zfs create -V 32G -s -o volblocksize=8K  ark/vm/plex-config
@@ -153,15 +156,21 @@ automatically. Confirm with `zpool status -x` after a reboot.
 
     sudo mkfs.ext4 -L plex-config /dev/zvol/ark/vm/plex-config
 
-Do not `mkfs` the `-os` zvols — the guest image is written into those.
+Do not `mkfs` the `-os` zvols — the guest image is written straight into those. The
+`plex-config` volume is Plex's SQLite database: a real block device in the guest, which
+is the whole reason it is not on `virtiofs`.
+
+Optional, if you later want the library on its own dataset:
+
+    sudo zfs create ark/media && sudo zfs mv /srv/ark/ephemeral/media/media ark/media
 
 ### Media permissions for the Plex VM
 
 virtiofs is mounted read-only, and virtiofsd runs as the `qemu` user. Make the tree
 readable to that user rather than relying on uid matching:
 
-    sudo chgrp -R qemu /srv/ark/media
-    sudo chmod -R g+rX /srv/ark/media
+    sudo chgrp -R qemu /srv/ark/ephemeral/media/media
+    sudo chmod -R g+rX /srv/ark/ephemeral/media/media
 
 (If you would rather not group-change the library, add the `qemu` user to whatever
 group already owns it — same effect.)
@@ -234,7 +243,7 @@ or you will capture runtime state.
 | Symptom | Cause |
 |---|---|
 | `virsh start` fails, no useful error | virtiofs without `<memoryBacking><source type='memfd'/><access mode='shared'/></memoryBacking>` |
-| Guest boots, `/media` empty or EACCES | virtiofsd (as `qemu`) cannot read `/srv/ark/media`; fix group perms (§4) |
+| Guest boots, `/media` empty or EACCES | virtiofsd (as `qemu`) cannot read the media path in `domain.xml`; fix group perms (§4) |
 | Guest has no network | NIC name in `hosts/<name>/default.nix` is not `eth0`, or VLAN not on the trunk |
 | `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`; mgmt→guest 22 blocked on the router; or "user is not trusted" (guests set `nix.settings.trusted-users = [ "jim" ]` — deploy as `jim`, not root) |
 | Domain boots to GRUB rescue | image built with UEFI/systemd-boot but the domain is BIOS — guests here are BIOS only |

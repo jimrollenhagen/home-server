@@ -46,10 +46,11 @@
       <model type='virtio'/>
     </interface>
 
-    <!-- /srv/ark/media on the host, read-only, mounted in the guest at /media -->
+    <!-- The existing library on the host, read-only, mounted in the guest at /media.
+         No volume, no copy: virtiofs exports the directory as-is. -->
     <filesystem type='mount' accessmode='passthrough'>
       <driver type='virtiofs'/>
-      <source dir='/srv/ark/media'/>
+      <source dir='/srv/ark/ephemeral/media/media'/>
       <target dir='media'/>
     </filesystem>
 

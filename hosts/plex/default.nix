@@ -20,7 +20,8 @@
     openFirewall = false; # opened explicitly above
   };
 
-  # Media arrives read-only over virtiofs from /srv/ark/media on the host.
+  # Media arrives read-only over virtiofs from /srv/ark/ephemeral/media/media on the
+  # host — the existing library, unchanged. Nothing is copied into a volume.
   # `nofail` + `automount` matter: a dead virtiofsd hangs the mount, and that
   # must not block boot.
   fileSystems."/media" = {

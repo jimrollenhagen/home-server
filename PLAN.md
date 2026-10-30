@@ -179,16 +179,23 @@ in front of them later.
 
 ```
 ark
-├── media/{movies,tv,music,photos}   # ro to guests; snapshot + send here
+├── ephemeral/media/media            # the existing library — exported, never modified
 ├── vm/plex-os                       # zvol, 64G, guest root disk
 ├── vm/plex-config                   # zvol, 32G, Plex DB + cache
 ├── vm/edge-os                       # zvol, 32G
 └── backup/                          # zfs send target / staging for external disk
 ```
 
-On `ark/media`: `recordsize=1M`, `compression=zstd`, `atime=off`, `xattr=sa`,
-`acltype=posixacl`. On zvols, `volblocksize=16K` is a sane default; 8K if you end up
-with something genuinely database-heavy.
+**The library is not moved or re-datasets.** Virtiofs exports
+`/srv/ark/ephemeral/media/media` as a directory; the guest mounts it read-only. The
+`zfs create ark/media` + `mv` dance from earlier drafts existed only to hang dataset
+properties and a snapshot policy on the library, which is optional and can be done later
+with `zfs mv` (instant, same pool) if you ever want it.
+
+On zvols, `volblocksize=16K` is a sane default; 8K for anything genuinely
+database-heavy. If you do carve out a media dataset later, `recordsize=1M`,
+`compression=zstd`, `atime=off`, `xattr=sa`, `acltype=posixacl` are the properties to
+set.
 
 ---
 
