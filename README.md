@@ -142,7 +142,8 @@ group already owns it — same effect.)
     nix build .#plex-image --out-link result-plex
     nix build .#edge-image --out-link result-edge
 
-Each produces `result-*/nixos.qcow2`. Write them into the zvols:
+Each produces `result-*/nixos.qcow2`. (Equivalent native invocation:
+`nixos-rebuild build-image --flake .#plex --image-variant qemu`.) Write them into the zvols:
 
     sudo qemu-img convert -O raw result-plex/nixos.qcow2 /dev/zvol/ark/vm/plex-os
     sudo qemu-img convert -O raw result-edge/nixos.qcow2 /dev/zvol/ark/vm/edge-os
