@@ -1,16 +1,21 @@
-# Single 232 GB SSD, ZFS root. WIPES THE DEVICE.
+# Single boot SSD: ESP + plain ext4 root. WIPES THE DEVICE.
 #
-# Set `device` to the by-id path of the boot SSD before running disko:
-#     ls -l /dev/disk/by-id/ | grep -v part
+# Root is deliberately ext4, not ZFS:
+#   - one disk means no redundancy, so ZFS snapshots are the only benefit;
+#   - the host is disposable (guest data lives on `ark`) and NixOS generations
+#     already give rollback of the system itself;
+#   - ZFS root would put a per-kernel module in the boot path on nixos-unstable,
+#     which is the one failure that takes down every guest at once.
+# `ark` still uses ZFS — it is imported after switch-root, not from the initrd.
 #
-# The array's disks must be unplugged (or the HBA disconnected) the first time
+# The array's disks must be unplugged (or the SATA cables pulled) the first time
 # you run this. disko destroys whatever it is pointed at.
 { ... }:
 {
   disko.devices = {
     disk.main = {
       type = "disk";
-      device = "/dev/disk/by-id/REPLACE-WITH-BOOT-SSD-ID";
+      device = "/dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_S21NNSAG113871V";
       content = {
         type = "gpt";
         partitions = {
@@ -24,54 +29,15 @@
               mountOptions = [ "umask=0077" ];
             };
           };
-          zfs = {
+          root = {
             size = "100%";
             content = {
-              type = "zfs";
-              pool = "zroot";
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+              mountOptions = [ "noatime" ];
             };
           };
-        };
-      };
-    };
-
-    zpool.zroot = {
-      type = "zpool";
-      mode = "";
-      options = {
-        ashift = "12";
-        cachefile = "none";
-      };
-      rootFsOptions = {
-        compression = "zstd";
-        acltype = "posixacl";
-        xattr = "sa";
-        atime = "off";
-        "com.sun:auto-snapshot" = "false";
-      };
-      mountpoint = "/";
-      # Snapshot the empty pool so you always have a "bare metal" state to diff
-      # against.
-      postCreateHook = "zfs list -t snapshot -H -o name | grep -q '^zroot@blank$' || zfs snapshot zroot@blank";
-
-      # The pool's own root dataset is mounted at / (see `mountpoint` above).
-      # Children below get `legacy` mountpoints so NixOS mounts them from
-      # fileSystems with zfsutil.
-      datasets = {
-        "nix" = {
-          type = "zfs_fs";
-          mountpoint = "/nix";
-          options.mountpoint = "legacy";
-        };
-        "var" = {
-          type = "zfs_fs";
-          mountpoint = "/var";
-          options.mountpoint = "legacy";
-        };
-        "home" = {
-          type = "zfs_fs";
-          mountpoint = "/home";
-          options.mountpoint = "legacy";
         };
       };
     };

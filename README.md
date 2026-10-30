@@ -28,7 +28,8 @@ Everything is driven from `modules/constants.nix`. Change an address there and r
        zfs get all ark > ~/ark-props.txt
        lsblk -o NAME,SIZE,MODEL,SERIAL > ~/disks.txt
 
-4. Note the boot SSD's by-id path, it goes into `hosts/hyper/disko.nix`:
+4. The boot SSD's by-id path is already set in `hosts/hyper/disko.nix`
+   (`ata-Samsung_SSD_850_EVO_250GB_…`). Confirm it still matches:
 
        ls -l /dev/disk/by-id/ | grep -v -- '-part'
 
@@ -65,7 +66,6 @@ Firewall rules to add (UniFi → Firewall):
 On the NixOS installer (booted in UEFI mode), with the array unplugged:
 
     git clone <your-repo> /tmp/homelab && cd /tmp/homelab
-    # edit hosts/hyper/disko.nix: set the by-id device path
     nix --experimental-features 'nix-command flakes' run \
       github:nix-community/disko -- --mode destroy,format,mount hosts/hyper/disko.nix
     nixos-install --flake .#hyper --root /mnt

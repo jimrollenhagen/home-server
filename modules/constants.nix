@@ -6,6 +6,8 @@
 #   30 edge   10.30.0.0/24    caddy .10
 #   40 dev    10.40.0.0/24    (unused for now)
 #   50 iot    10.50.0.0/24    (unused for now)
+#   60 guest  10.60.0.0/24    (unused for now)
+#   70 family 10.70.0.0/24    (unused for now)
 { ... }:
 {
   _module.args.net = {
@@ -19,7 +21,7 @@
     plex = { address = "10.20.0.20"; prefix = 24; };
     edge = { address = "10.30.0.10"; prefix = 24; };
 
-    # DNS name for the reverse proxy; set your real domain before building edge
-    domain = "example.com";
+    # DNS name for the reverse proxy
+    domain = "rollenhagen.me";
   };
 }

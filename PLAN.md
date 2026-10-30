@@ -13,24 +13,24 @@ an evening each.
 ## 1. What we are building
 
 ```
-                 eno1 (802.1Q trunk from the switch)
+                enp3s0 (802.1Q trunk from the UDM Pro)
                    │
      ┌─────────────┼──────────────┬───────────────┐
-  vlan10        vlan20         vlan30          vlan40
- (mgmt)         (apps)         (media)         (edge)
+  vlan10        vlan20         vlan30          vlan40/50
+  (mgmt)        (apps)         (edge)          (dev/iot)
      │             │              │               │
-host .10          br20           br30            br40
+10.10.10.10      br20           br30          br40, br50
                    │              │               │
                ┌───┴───┐     ┌────┴────┐     ┌────┴────┐
                │  VMs  │     │  plex   │     │  edge   │
-               │ later │     │   VM    │     │   VM    │
+               │ later │     │ .0.20   │     │  caddy  │
                └───────┘     └────┬────┘     └────┬────┘
                                   │               │
                            virtiofs /media     reverse proxy
                            (ro, from /srv/ark/media)
 ```
 
-- **Host**: NixOS unstable, pinned in `flake.lock`, ZFS root, no desktop. Its entire
+- **Host**: NixOS unstable, pinned in `flake.lock`, ext4 root, no desktop. Its entire
   hypervisor surface is `virtualisation.libvirtd` plus a few bridges.
 - **VMs**: NixOS guests built from the same flake, one service per VM, each on the VLAN
   it belongs to.
@@ -69,7 +69,7 @@ Existing router
 - `zpool get ashift` gives me 0; `zdb -C | grep ashift` gives me 12
 - no encryption
 
-6. **Boot disks** — one or two NVMe for the ZFS root pool.
+6. **Boot disks** — one or two NVMe/SSD for the root filesystem.
 
 I have a single SSD boot disk. Current partition scheme is:
 sde               8:64   0 232.9G  0 disk
@@ -100,27 +100,33 @@ I don't know if I care, I guess the former is fine.
 | Piece | Choice |
 |---|---|
 | Channel | `nixos-unstable`, pinned via `flake.lock`, bumped deliberately |
-| Root | ZFS on the single 232 GB SSD, `ashift=12`, declared with disko |
+| Root | plain ext4 on the single 250 GB SSD, declared with disko |
+| Array | `ark`, imported at boot by ZFS (`boot.zfs.extraPools`) — the only ZFS here |
 | Bootloader | systemd-boot on the ESP (UEFI) |
-| Kernel | `boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages` |
-| Swap | zram; no swapfile on ZFS |
+| Kernel | nixpkgs default (no explicit pin; see the note below) |
+| Swap | zram; no swapfile |
 | Desktop | none |
+
+**Why ext4 and not ZFS for the root.** The root is one disk, so ZFS would buy no
+redundancy — only snapshots, which NixOS generations already provide for the system
+itself. Against that, a ZFS root puts a per-kernel module in the boot path, and on
+nixos-unstable a kernel that outruns ZFS support is the one failure mode that takes
+down every guest at once. The array keeps ZFS because that is where the data and the
+snapshots matter; it is imported in stage 2, so the host still boots if ZFS does not.
 
 disko declares the disk layout, so the host is reproducible from the repo rather than
 from a memory of what you clicked in an installer. **Danger:** `disko --mode
-destroy,format,mount` wipes whatever it is pointed at. There is a single boot SSD, so
-the root pool has no redundancy — guest data lives on `ark`, the host is disposable, and
-that is the trade this architecture already makes. Point disko at the one SSD, and run
-it with the array physically disconnected the first time.
+destroy,format,mount` wipes whatever it is pointed at. Point it at the one SSD, and run
+it with the array physically disconnected the first time. There is no redundancy on the
+boot disk and none is intended: guest data lives on `ark`, and the host is rebuildable.
 
 Host skeleton (sketch, not the final config):
 
 ```nix
 {
-  networking.hostId = "deadbeef";              # required for ZFS
-  boot.supportedFilesystems = [ "zfs" ];
-  boot.zfs.extraPools = [ "ark" ];             # imports the array at boot
-  boot.kernelPackages = config.boot.zfs.package.latestCompatibleLinuxPackages;
+  networking.hostId = "deadbeef";              # required while ZFS is enabled
+  boot.supportedFilesystems = [ "zfs" ];       # for `ark`, not for the root
+  boot.zfs.extraPools = [ "ark" ];             # imports the array in stage 2
 
   services.openssh.enable = true;
   networking.firewall.enable = true;
@@ -522,7 +528,7 @@ A `zfs send` you have never restored is a rumour. Put one restore on the build l
 | Step | Work | Est. |
 |---|---|---|
 | M0 | Answer §2; record the array's `zpool status` / `zfs get all`; confirm the media exists somewhere else right now | 0.5 h |
-| M1 | Repo skeleton (flake, `hosts/hyper`, disko); install NixOS on the NVMe pair; reboot | 2–3 h |
+| M1 | Repo skeleton (flake, `hosts/hyper`, disko); install NixOS on the boot SSD; reboot | 2–3 h |
 | M2 | Attach the array, `zpool import`, set dataset properties, reboot, verify healthy | 1 h |
 | M3 | Trunk + per-VLAN bridges; confirm traffic lands on the right subnet per bridge | 1 h |
 | M4 | libvirtd + define-oneshot; build a throwaway guest; prove define → boot → SSH → rebuild from your laptop | 3–4 h |

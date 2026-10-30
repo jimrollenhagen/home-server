@@ -33,10 +33,12 @@
   # hardware.cpu.intel.updateMicrocode = true;
   # hardware.cpu.amd.updateMicrocode = true;
 
+  # Root is ext4; ZFS is here only for the array. `ark` is imported in stage 2,
+  # so a broken ZFS module build can no longer stop the host from booting.
   boot.supportedFilesystems = [ "zfs" ];
   boot.zfs.extraPools = [ "ark" ];
-  # Do not force-import the root pool in stage 1: the new nixpkgs default is false,
-  # and forcing it is a documented data-loss risk if the pool is degraded.
+  # Inert without a ZFS root, but it is the documented value from 26.11 on and
+  # silences the nixpkgs warning.
   boot.zfs.forceImportRoot = false;
   # Kernel: left at the nixpkgs default. `latestCompatibleLinuxPackages` is
   # deprecated and now just resolves to the default kernel. If a ZFS/kernel
