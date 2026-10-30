@@ -166,14 +166,19 @@ Optional, if you later want the library on its own dataset:
 
 ### Media permissions for the Plex VM
 
-virtiofs is mounted read-only, and virtiofsd runs as the `qemu` user. Make the tree
-readable to that user rather than relying on uid matching:
+virtiofs is mounted read-only, and libvirt spawns `virtiofsd` as the unprivileged
+QEMU user. On NixOS that is `qemu-libvirtd:qemu-libvirtd` (Debian calls it
+`libvirt-qemu`; the name in most tutorials is wrong here). Check with `getent group
+qemu-libvirtd`. Make the tree readable to that group rather than relying on uid
+matching:
 
-    sudo chgrp -R qemu /srv/ark/ephemeral/media/media
+    sudo chgrp -R qemu-libvirtd /srv/ark/ephemeral/media/media
     sudo chmod -R g+rX /srv/ark/ephemeral/media/media
 
-(If you would rather not group-change the library, add the `qemu` user to whatever
-group already owns it — same effect.)
+`chgrp`/`chmod` are metadata-only — no data is rewritten, though it does walk every
+inode, so expect a pause on a large library. The lighter-touch alternative is
+`sudo chmod -R o+rX <path>` (world-readable, no group change), which is fine on a
+single-admin box and avoids the group chgrp entirely.
 
 ---
 
@@ -243,7 +248,7 @@ or you will capture runtime state.
 | Symptom | Cause |
 |---|---|
 | `virsh start` fails, no useful error | virtiofs without `<memoryBacking><source type='memfd'/><access mode='shared'/></memoryBacking>` |
-| Guest boots, `/media` empty or EACCES | virtiofsd (as `qemu`) cannot read the media path in `domain.xml`; fix group perms (§4) |
+| Guest boots, `/media` empty or EACCES | virtiofsd (as `qemu-libvirtd`) cannot read the media path in `domain.xml`; fix group perms (§4) |
 | Guest has no network | NIC name in `hosts/<name>/default.nix` is not `eth0`, or VLAN not on the trunk |
 | `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`; mgmt→guest 22 blocked on the router; or "user is not trusted" (guests set `nix.settings.trusted-users = [ "jim" ]` — deploy as `jim`, not root) |
 | Domain boots to GRUB rescue | image built with UEFI/systemd-boot but the domain is BIOS — guests here are BIOS only |

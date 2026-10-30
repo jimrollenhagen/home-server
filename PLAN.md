@@ -571,9 +571,11 @@ of a pattern.
    an error that never mentions virtiofs.
 4. **`virsh dumpxml` without `--inactive` captures runtime state.** Always export with
    `--inactive`, or the committed XML bakes in a transient device.
-5. **virtiofs passes host uid/gid through**, and virtiofsd runs as the qemu user. For a
-   read-only media mount, make the tree group-readable and add the qemu user to that
-   group; pin `users.users.plex.uid` only if you need write access.
+5. **virtiofs passes host uid/gid through**, and virtiofsd runs as the unprivileged
+   QEMU user — `qemu-libvirtd` on NixOS (Debian's `libvirt-qemu` is the name in most
+   tutorials, and it does not exist here). For a read-only media mount, `chgrp -R
+   qemu-libvirtd` + `chmod -R g+rX`; pin `users.users.plex.uid` only if you need write
+   access.
 6. **BIOS vs UEFI in the domain.** Decided: guests boot BIOS/GRUB, the host boots
    systemd-boot/UEFI. An image built the other way will not boot. Do not mix.
 7. **libvirt does not tag VLANs on a bridge.** Per-VLAN bridges (§6), not `<vlan>`.
