@@ -50,18 +50,6 @@
       packages.${system} = {
         plex-image = (mkGuest "plex" false).config.system.build.images.qemu;
         edge-image = (mkGuest "edge" false).config.system.build.images.qemu;
-
-        # Installer ISO that comes up SSH-able with your keys (modules/installer.nix).
-        #   nix build .#installer-iso --out-link result-iso
-        installer-iso = (lib.nixosSystem {
-          inherit system;
-          specialArgs = { inherit inputs; };
-          modules = [
-            "${nixpkgs}/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix"
-            ./modules/keys.nix
-            ./modules/installer.nix
-          ];
-        }).config.system.build.isoImage;
       };
     };
 }
