@@ -126,6 +126,10 @@
     extraGroups = [ "wheel" "libvirtd" ];
     initialPassword = "changeme"; # change with `passwd` on first login
   };
+
+  # Without this, a bare `virsh` as a normal user talks to qemu:///session, which
+  # is an empty libvirt instance — the domains live in qemu:///system.
+  environment.variables.LIBVIRT_DEFAULT_URI = "qemu:///system";
   security.sudo.wheelNeedsPassword = false;
 
   services.openssh = {

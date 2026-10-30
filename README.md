@@ -102,10 +102,24 @@ Log in on the console (or SSH once keys are in) as `jim` / `changeme`, then `pas
     ip -br addr              # vlan10 should hold 10.10.10.10
     ping 10.10.10.1
     sudo systemctl status libvirtd
-    virsh list --all         # domains defined but not startable yet (no disks)
+    virsh list --all         # plex + edge, shut off (defined, but no disks yet)
 
 If VLAN traffic is wrong, `sudo bridge vlan show` and `ip -d link show vlan20` tell
 you whether the tags are where you think they are.
+
+### Where you should be after each step
+
+| After | `virsh list --all` | `ls /dev/zvol/ark/vm` |
+|---|---|---|
+| §3 first boot | `plex`, `edge` — shut off | does not exist yet |
+| §4 array + zvols | same two, still shut off | `plex-os`, `plex-config`, `edge-os` |
+| §5 images written | same two, still shut off | same, now containing images |
+| §6 start | `running` | same |
+
+Domains are defined by the host's `libvirt-domains` oneshot from `hosts/*/domain.xml`.
+Building a guest image is not part of defining a VM — it is only what makes `virsh start`
+able to boot something. If the definitions are missing, `sudo systemctl status
+libvirt-domains` and `journalctl -u libvirt-domains` say why.
 
 ---
 
@@ -223,4 +237,5 @@ or you will capture runtime state.
 | Guest has no network | NIC name in `hosts/<name>/default.nix` is not `eth0`, or VLAN not on the trunk |
 | `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`; mgmt→guest 22 blocked on the router; or "user is not trusted" (guests set `nix.settings.trusted-users = [ "jim" ]` — deploy as `jim`, not root) |
 | Domain boots to GRUB rescue | image built with UEFI/systemd-boot but the domain is BIOS — guests here are BIOS only |
+| `virsh list --all` shows nothing | you are on `qemu:///session`. Use `virsh -c qemu:///system`; the host sets `LIBVIRT_DEFAULT_URI` so a bare `virsh` works after a rebuild |
 | Plex cannot see the library | mount is `nofail`; check `systemctl status media.mount` and `journalctl -u virtiofsd` |
