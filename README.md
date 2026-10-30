@@ -1,7 +1,7 @@
 # homelab
 
 NixOS host (`hyper`) running libvirt/QEMU guests. VM definitions are checked-in
-domain XML. Build plan and rationale: `PLAN.md`.
+domain XML. Build plan and rationale: `PLAN.md`. Remote install options: `INSTALL.md`.
 
     flake.nix
     modules/
@@ -62,6 +62,9 @@ Firewall rules to add (UniFi → Firewall):
 ---
 
 ## 2. Install the host
+
+Automated alternative: `INSTALL.md` — `nixos-anywhere` over SSH (no media at all), or a
+custom installer ISO that comes up SSH-able. The steps below are the manual path.
 
 On the NixOS installer (booted in UEFI mode), with the array unplugged:
 
