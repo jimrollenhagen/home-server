@@ -145,7 +145,8 @@ automatically. Confirm with `zpool status -x` after a reboot.
     sudo mv /srv/ark/* /srv/ark/media/     # only if the root dataset holds the media
     sudo zfs set recordsize=1M compression=zstd atime=off xattr=sa acltype=posixacl ark/media
 
-    # guest disks
+    # guest disks — the parent dataset must exist first; `zfs create -p` also works
+    sudo zfs create ark/vm
     sudo zfs create -V 64G -s -o volblocksize=16K ark/vm/plex-os
     sudo zfs create -V 32G -s -o volblocksize=8K  ark/vm/plex-config
     sudo zfs create -V 32G -s -o volblocksize=16K ark/vm/edge-os
