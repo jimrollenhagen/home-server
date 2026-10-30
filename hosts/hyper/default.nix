@@ -162,6 +162,7 @@
     libvirt
     qemu_kvm
     tmux
+    tree
     virt-manager
     vim
   ];
