@@ -91,7 +91,13 @@
   # ---------------------------------------------------------------------------
   virtualisation.libvirtd = {
     enable = true;
-    qemu.runAsRoot = false;
+    qemu = {
+      runAsRoot = false;
+      # virtiofsd is out-of-tree and lives in its own package; without this,
+      # `virsh start` fails with "Unable to find a satisfying virtiofsd".
+      # nixpkgs links these into /var/lib/qemu/vhost-user, which libvirt scans.
+      vhostUserPackages = [ pkgs.virtiofsd ];
+    };
     allowedBridges = [ "br20" "br30" "br40" "br50" ];
   };
 
