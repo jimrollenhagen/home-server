@@ -2,6 +2,7 @@
 { config, lib, pkgs, net, ... }:
 {
   networking.hostName = "plex";
+  networking.domain = net.plex.domain;   # plex.apps.rollenhagen.me
 
   networking.interfaces.eth0.ipv4.addresses = [
     { inherit (net.plex) address; prefixLength = net.plex.prefix; }

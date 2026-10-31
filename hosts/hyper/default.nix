@@ -8,6 +8,7 @@
   ];
 
   networking.hostName = "hyper";
+  networking.domain = net.host.domain;   # hyper.mgmt.rollenhagen.me
   # ZFS requires a stable 8-hex-digit host id. Any random value works; do not
   # reuse it on a second machine.
   networking.hostId = "3f2a9c14";

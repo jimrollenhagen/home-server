@@ -17,9 +17,14 @@
     gateway = "10.10.10.1"; # UDM Pro
     dns = [ "10.10.10.1" ];
 
-    host = { address = "10.10.10.10"; prefix = 24; };
-    plex = { address = "10.20.0.20"; prefix = 24; };
-    edge = { address = "10.30.0.10"; prefix = 24; };
+    # Record each machine's own FQDN here: `networking.domain` + hostName gives
+    # `hostname -f`, /etc/hosts and anything that asks for the FQDN.
+    #   hyper → hyper.mgmt.rollenhagen.me
+    #   plex  → plex.apps.rollenhagen.me
+    #   edge  → edge.rollenhagen.me
+    host = { address = "10.10.10.10"; prefix = 24; domain = "mgmt.rollenhagen.me"; };
+    plex = { address = "10.20.0.20"; prefix = 24; domain = "apps.rollenhagen.me"; };
+    edge = { address = "10.30.0.10"; prefix = 24; domain = "rollenhagen.me"; };
 
     # DNS name for the reverse proxy
     domain = "rollenhagen.me";

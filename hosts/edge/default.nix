@@ -5,6 +5,7 @@ let
 in
 {
   networking.hostName = "edge";
+  networking.domain = net.edge.domain;   # edge.rollenhagen.me
 
   networking.interfaces.eth0.ipv4.addresses = [
     { inherit (net.edge) address; prefixLength = net.edge.prefix; }

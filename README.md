@@ -68,6 +68,19 @@ Create these networks (Settings → Networks), all "Router" enabled:
 On the switch port facing the server: allow **all** tagged VLANs (no native VLAN
 change — the host expects a plain trunk and tags everything itself).
 
+Names to resolve (create these as A records wherever your LAN DNS lives — UDM local
+DNS, or DigitalOcean if you want them externally):
+
+| FQDN | Address | Set by |
+|---|---|---|
+| `hyper.mgmt.rollenhagen.me` | 10.10.10.10 | `networking.domain = net.host.domain` |
+| `plex.apps.rollenhagen.me` | 10.20.0.20 | `networking.domain = net.plex.domain` |
+| `edge.rollenhagen.me` | 10.30.0.10 | `networking.domain = net.edge.domain` |
+
+The NixOS side only gives each machine its own identity (`hostname -f`, the
+`127.0.1.1` line in `/etc/hosts`); name *resolution* still comes from DNS. All three
+subdomains are defined in `modules/constants.nix`.
+
 Firewall rules to add (UniFi → Firewall):
 
 - WAN → `10.30.0.10` TCP 80, 443 (only if you want remote access)
