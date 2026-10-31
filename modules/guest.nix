@@ -1,9 +1,15 @@
 # Shared config for every guest. Host-specific bits live in hosts/<name>/.
-{ config, lib, pkgs, net, ... }:
+{ config, lib, pkgs, modulesPath, net, ... }:
 {
   imports = [
     ./constants.nix
     ./keys.nix
+
+    # virtio_blk/virtio_pci/virtiofs/9p in the initrd. Without this the guest
+    # kernel cannot see /dev/vda, so the root device never appears and boot drops
+    # to emergency mode with "Timed out waiting for /dev/disk/by-label/nixos".
+    # nixpkgs' disk-image module does not pull this in on its own.
+    "${modulesPath}/profiles/qemu-guest.nix"
   ];
 
   # Guests boot BIOS/GRUB, which matches the domain XML (no UEFI firmware).
