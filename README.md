@@ -331,6 +331,11 @@ on the host (the oneshot redefines it), then `virsh shutdown <name> && virsh sta
 If you would rather author it in virt-manager, export with `virsh dumpxml --inactive`
 or you will capture runtime state.
 
+Every domain XML carries an explicit `<uuid>`. That is what makes `virsh define`
+idempotent: without one, libvirt invents a fresh UUID on each define and refuses the
+second one with `domain 'plex' already exists with uuid …`. Keep the UUID stable when you
+edit the file, and never regenerate it for an existing domain.
+
 ---
 
 ## 8. Troubleshooting
