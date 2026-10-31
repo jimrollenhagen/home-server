@@ -10,7 +10,7 @@
   networking.defaultGateway = "10.20.0.1";
 
   # 22 from the admin network, 32400 from the edge VM (10.30.0.0/24).
-  networking.firewall.allowedTCPPorts = [ 32400 ];
+  networking.firewall.allowedTCPPorts = [ 32400 22 ];
 
   # Plex is unfree; allow only that package rather than flipping the global switch.
   nixpkgs.config.allowUnfreePredicate = pkg:
