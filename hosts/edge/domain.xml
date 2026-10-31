@@ -1,5 +1,6 @@
 <domain type='kvm'>
   <name>edge</name>
+  <uuid>447fa071-cb6c-49ab-a5ff-7a216d8809e5</uuid>
   <description>Caddy reverse proxy — VLAN 30 (edge), 10.30.0.10</description>
   <memory unit='GiB'>2</memory>
   <currentMemory unit='GiB'>2</currentMemory>

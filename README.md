@@ -342,5 +342,6 @@ or you will capture runtime state.
 | Guest has no network | NIC name in `hosts/<name>/default.nix` is not `eth0`, or VLAN not on the trunk |
 | `nixos-rebuild --target-host` refuses | key not in `modules/keys.nix`; mgmt→guest 22 blocked on the router; or "user is not trusted" (guests set `nix.settings.trusted-users = [ "jim" ]` — deploy as `jim`, not root) |
 | Domain boots to GRUB rescue | image built with UEFI/systemd-boot but the domain is BIOS — guests here are BIOS only |
+| `libvirt-domains` fails: `domain 'plex' already exists with uuid …` | the XML has no `<uuid>`, so libvirt invents one on each define. Pin it — `virsh list --all --uuid` shows what exists |
 | `virsh list --all` shows nothing | you are on `qemu:///session`. Use `virsh -c qemu:///system`; the host sets `LIBVIRT_DEFAULT_URI` so a bare `virsh` works after a rebuild |
 | Plex cannot see the library | mount is `nofail`; check `systemctl status media.mount` and `journalctl -u virtiofsd` |

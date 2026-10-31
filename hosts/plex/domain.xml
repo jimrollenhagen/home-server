@@ -1,5 +1,6 @@
 <domain type='kvm'>
   <name>plex</name>
+  <uuid>d201c3c5-5dc6-4b76-861f-3b8f7b901245</uuid>
   <description>Plex Media Server — VLAN 20 (apps), 10.20.0.20</description>
   <memory unit='GiB'>8</memory>
   <currentMemory unit='GiB'>8</currentMemory>
