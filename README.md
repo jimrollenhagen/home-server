@@ -193,6 +193,61 @@ Each produces `result-*/nixos.qcow2`. (Equivalent native invocation:
     sudo qemu-img convert -O raw result-plex/nixos.qcow2 /dev/zvol/ark/vm/plex-os
     sudo qemu-img convert -O raw result-edge/nixos.qcow2 /dev/zvol/ark/vm/edge-os
 
+### 5.5 Importing an existing Plex config (optional)
+
+Carrying a library over from the old host? Do this before the VM's first start. The
+`plex-config` zvol is plain ext4, so mount it on the host and copy into it.
+
+**1. Check the library paths.** Plex stores *absolute* paths in its database, and the VM
+mounts the library at `/media`. If the old server saw a different root, every item shows
+as unavailable even though the files are perfectly fine.
+
+    sqlite3 "/path/to/Plex Media Server/Plug-in Support/Databases/com.plexapp.plugins.library.db" \
+      "select root_path from section_locations;"
+
+If those are not `/media/...`, add a bind mount in the guest rather than editing the
+database — old paths keep resolving, nothing is rewritten:
+
+    fileSystems."/data/media" = {
+      device = "/media";
+      fsType = "none";
+      options = [ "bind" "ro" ];
+    };
+
+**2. Check the size.** The volume is 32 GB and library metadata for a big collection runs
+10–40 GB. `du -sh` the old directory; if it is close, grow first:
+
+    sudo zfs set volsize=64G ark/vm/plex-config
+    sudo mount /dev/zvol/ark/vm/plex-config /mnt
+    sudo resize2fs /dev/zvol/ark/vm/plex-config
+    sudo umount /mnt
+
+**3. Stop the old server.** The copy carries `MachineIdentifier` from `Preferences.xml`,
+which is what you want — same server, clients keep working — but two running servers with
+the same identity confuse clients.
+
+**4. Copy, with the VM stopped:**
+
+    sudo mkdir -p /mnt/plexconfig
+    sudo mount /dev/zvol/ark/vm/plex-config /mnt/plexconfig
+    sudo rsync -aHAX --info=progress2 \
+      oldhost:'/path/to/Plex Media Server/' "/mnt/plexconfig/Plex Media Server/"
+    sudo chown -R 193:193 "/mnt/plexconfig/Plex Media Server"
+    sudo umount /mnt/plexconfig
+
+Note the trailing slash on the source and the explicit `Plex Media Server` on the
+destination. NixOS runs Plex as uid/gid **193** (`plex`) with app support dir
+`/var/lib/plex`, so on the mounted volume that directory *is* `/var/lib/plex` — the
+service's `PIDFile` is `${dataDir}/Plex Media Server/plexmediaserver.pid`.
+
+Then `virsh start plex` and open `http://10.20.0.20:32400/web`: same server name,
+libraries intact, watch state preserved.
+
+Two cautions. If the old install ran an older Plex, the database schema migrates forward
+on first start and **does not go back** — keep the old directory until you are satisfied.
+And never rsync a live database: a running Plex half-writes its SQLite files, and the
+result opens fine and then quietly corrupts.
+
 ---
 
 ## 6. Start the guests
@@ -209,11 +264,13 @@ The image grows its root partition to fill the zvol on first boot
 confirm with `df -h /` that you see the full 64 GB.
 
 Then, in the Plex VM, claim the server: browse to `http://10.20.0.20:32400/web`
-from the mgmt or apps network.
+from the mgmt or apps network. (Skip the claim if you imported a config in §5.5 — it
+arrives already claimed.)
 
 ### Edge VM / Caddy
 
-1. Set your real domain in `modules/constants.nix` (`domain = "example.com"`).
+1. `modules/constants.nix` already sets `domain = "rollenhagen.me"` — change it there if
+   it should differ.
 2. Point `plex.<domain>` at `10.30.0.10` at DigitalOcean.
 3. Forward 80/443 on the UDM Pro to `10.30.0.10` (HTTP-01 needs 80 to reach Caddy).
 4. Rebuild the edge guest and the certificate is issued on first request.
