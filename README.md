@@ -243,6 +243,26 @@ service's `PIDFile` is `${dataDir}/Plex Media Server/plexmediaserver.pid`.
 Then `virsh start plex` and open `http://10.20.0.20:32400/web`: same server name,
 libraries intact, watch state preserved.
 
+**The old domain.** Nothing in the library database references it — the domain is a
+connection setting, not metadata. It appears in one place, `customConnections` (the
+"Custom server access URLs" field) in `Preferences.xml`, and only if the old setup
+advertised a URL:
+
+    grep -o 'customConnections="[^"]*"' "/mnt/plexconfig/Plex Media Server/Preferences.xml"
+
+Easiest is to leave it and fix it after first boot in Settings → Network → Custom server
+access URLs. While stopped, clearing it is:
+
+    sudo sed -i 's|customConnections="[^"]*"|customConnections=""|' \
+      "/mnt/plexconfig/Plex Media Server/Preferences.xml"
+
+Leave `MachineIdentifier` and `PlexOnlineToken` alone — they are what makes this the same
+server to plex.tv and to your clients. Then on first boot set Settings → Network →
+Secure connections to *Preferred* (Caddy terminates TLS) and turn off Remote Access if it
+still points at the old domain. Plex's own certificate is `<ip>.<hash>.plex.direct`, where
+the hash comes from the machine identifier rather than your domain, so it takes care of
+itself.
+
 Two cautions. If the old install ran an older Plex, the database schema migrates forward
 on first start and **does not go back** — keep the old directory until you are satisfied.
 And never rsync a live database: a running Plex half-writes its SQLite files, and the
