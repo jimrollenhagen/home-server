@@ -33,10 +33,7 @@
     "xhci_pci"
   ];
 
-  # Uncomment whichever matches the CPU (the GTX 960 era suggests Intel, but check
-  # /proc/cpuinfo):
-  # hardware.cpu.intel.updateMicrocode = true;
-  # hardware.cpu.amd.updateMicrocode = true;
+  hardware.cpu.intel.updateMicrocode = true;
 
   # Root is ext4; ZFS is here only for the array. `ark` is imported in stage 2,
   # so a broken ZFS module build can no longer stop the host from booting.
