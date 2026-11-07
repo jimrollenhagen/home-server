@@ -1,7 +1,9 @@
 # PLAN — agent VM, lab-wide herdr, and a machine account for updates
 
-Status: proposal, nothing implemented. The three open questions from review are settled
-(§1.1–1.3); §1.4 lists what it rests on.
+Status: implemented. Config in `0572ef9`, the hyper-side helper in `27f1eae`. The three
+questions from review are settled (§1.1–1.3); §1.4 lists what it rests on. What has not
+been exercised is anything that needs the lab: the zvol, the image, first boot, and the
+copy of Hermes (§4–§5).
 
 ## 0. What this adds
 
