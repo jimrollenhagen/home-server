@@ -1,15 +1,10 @@
-# Admin SSH keys, shared by the host and every guest.
+# Admin SSH keys live in `net.adminKeys` (modules/constants.nix) so the `agent`
+# account can share them. This module applies them to the human account.
 #
-# Nix lists are whitespace-separated — no commas between entries.
 # Until a key here works, the only way in is the serial console (host) or VNC
 # (guests), with the bootstrap password "changeme":
 #     passwd
-{ ... }:
+{ net, ... }:
 {
-  users.users.jim.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMR+9KlMf0ZaqqM6SOUnOrVO8MheSa5YQFw71mRAC1Ty moshi"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEQDbDMhsnMvXWr/T5PAthUn+plNRtJFCUNE/tffgZg9 jim@jroll-m1.local"
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEolcehnyRcdmH5smaq+hLwGP/BdulnGhu8YVzafxKkU jim@hyper"
-  ];
+  users.users.jim.openssh.authorizedKeys.keys = net.adminKeys;
 }
-

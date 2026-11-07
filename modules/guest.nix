@@ -4,6 +4,8 @@
   imports = [
     ./constants.nix
     ./keys.nix
+    ./agent-access.nix
+    ./herdr.nix
 
     # virtio_blk/virtio_pci/virtiofs/9p in the initrd. Without this the guest
     # kernel cannot see /dev/vda, so the root device never appears and boot drops

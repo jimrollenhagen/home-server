@@ -199,12 +199,17 @@ single-admin box and avoids the group chgrp entirely.
 
     nix build .#plex-image --out-link result-plex
     nix build .#edge-image --out-link result-edge
+    nix build .#agent-image --out-link result-agent
 
 Each produces `result-*/nixos.qcow2`. (Equivalent native invocation:
 `nixos-rebuild build-image --flake .#plex --image-variant qemu`.) Write them into the zvols:
 
     sudo qemu-img convert -O raw result-plex/nixos.qcow2 /dev/zvol/ark/vm/plex-os
     sudo qemu-img convert -O raw result-edge/nixos.qcow2 /dev/zvol/ark/vm/edge-os
+    sudo qemu-img convert -O raw result-agent/nixos.qcow2 /dev/zvol/ark/vm/agent-os
+
+The zvols themselves are created by hand first (`zfs create -V 64G ark/vm/plex-os`, and
+the same for `edge-os` at 32 G and `agent-os` at 64 G).
 
 ### 5.5 Importing an existing Plex config (optional)
 
@@ -310,6 +315,25 @@ arrives already claimed.)
 
 For DNS-01 instead (keeps 80 closed), follow the commented block in
 `hosts/edge/default.nix`; the first build prints the `vendorHash` you need.
+
+### Agent VM / Hermes
+
+`agent` (10.20.0.30) is the machine that runs Hermes and holds the automation account.
+It is a normal guest except for two things, both in `hosts/agent/default.nix`:
+
+1. sshd accepts `10.10.10.0/24` and `192.168.1.0/24` only — `guest.nix` opens 22 to
+   everyone, and this one uses `mkForce` to replace that.
+2. It carries `git`, `nix-output-monitor` and a bigger store.
+
+Before first boot, on the UDM Pro:
+
+- local DNS record `agent.apps.rollenhagen.me` → `10.20.0.30` (local resolver only);
+- permit `10.20.0.30` → TCP 22 on `10.10.10.10` and `10.30.0.10`. Nothing is needed for
+  plex — same bridge.
+
+Then `virsh start agent`, `virsh console agent`, log in as `jim` / `changeme`, `passwd`,
+and confirm `hostname -f` is `agent.apps.rollenhagen.me`. The rest — the agent's own key,
+the sudo framework, moving Hermes — is `PLAN-agent.md` §4–§5.
 
 ---
 

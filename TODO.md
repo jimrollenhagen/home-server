@@ -123,6 +123,12 @@ Files: `modules/monitoring.nix` (new), `hosts/hyper/default.nix` (import).
 
 ## 6. Deliberately not now
 
+- **Agent deploy capability.** `modules/agent-access.nix` exists with one trivial command
+  (`echo`) and no `trusted-users`; the agent can build and push but not activate. Adding
+  deploy means an `agent-activate` wrapper, `trusted-users = [ "agent" ]` on each target,
+  and a deploy script — a root grant, written up as its own plan first. See
+  `PLAN-agent.md` §8.
+
 - **GPU passthrough (M8).** GTX 960 / GM206 is 1–2 concurrent 1080p transcodes and is frozen
   on driver 580. Only worth it if CPU transcoding actually annoys you.
 - **sops-nix / age secrets.** The flake currently holds zero secrets (Caddy uses HTTP-01).

@@ -4,6 +4,8 @@
   imports = [
     ../../modules/constants.nix
     ../../modules/keys.nix
+    ../../modules/agent-access.nix
+    ../../modules/herdr.nix
     ./disko.nix
   ];
 
@@ -119,6 +121,8 @@
       ${pkgs.libvirt}/bin/virsh autostart plex
       ${pkgs.libvirt}/bin/virsh define ${./../edge/domain.xml}
       ${pkgs.libvirt}/bin/virsh autostart edge
+      ${pkgs.libvirt}/bin/virsh define ${./../agent/domain.xml}
+      ${pkgs.libvirt}/bin/virsh autostart agent
     '';
   };
 

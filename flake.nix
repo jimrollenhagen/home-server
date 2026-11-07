@@ -41,6 +41,7 @@
 
         plex = mkGuest "plex" true;
         edge = mkGuest "edge" true;
+        agent = mkGuest "agent" true;
       };
 
       # Guest disk images, straight from the guest's own configuration
@@ -50,6 +51,7 @@
       packages.${system} = {
         plex-image = (mkGuest "plex" false).config.system.build.images.qemu;
         edge-image = (mkGuest "edge" false).config.system.build.images.qemu;
+        agent-image = (mkGuest "agent" false).config.system.build.images.qemu;
       };
     };
 }
