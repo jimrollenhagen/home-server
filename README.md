@@ -335,6 +335,10 @@ Then `virsh start agent`, `virsh console agent`, log in as `jim` / `changeme`, `
 and confirm `hostname -f` is `agent.apps.rollenhagen.me`. The rest — the agent's own key,
 the sudo framework, moving Hermes — is `PLAN-agent.md` §4–§5.
 
+On hyper, `sudo scripts/create-agent-vm.sh` does the disk and domain steps in one go
+(create the zvol, build the image, write it, define and start); it refuses to overwrite a
+disk that already holds a filesystem unless `FORCE=1`.
+
 ---
 
 ## 7. Day-2
