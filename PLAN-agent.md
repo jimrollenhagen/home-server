@@ -145,9 +145,15 @@ New guest config, ~20 lines:
   # guest.nix opens 22 to the world. This machine holds the lab's key, so only the
   # management network and the client LAN may reach sshd (the laptop is on
   # 192.168.1.0/24). mkForce because the list merges rather than replaces.
+  #
+  # extraCommands, not extraInputRules: the latter is declared only by the
+  # nftables firewall backend, and networking.nftables.enable is false here, so
+  # it is a silent no-op. extraCommands is the iptables hook, and it is
+  # appended before the final reject.
   networking.firewall.allowedTCPPorts = lib.mkForce [];
-  networking.firewall.extraInputRules = ''
-    ip saddr { 10.10.10.0/24, 192.168.1.0/24 } tcp dport 22 accept
+  networking.firewall.extraCommands = ''
+    iptables -A nixos-fw -p tcp --dport 22 -s 10.10.10.0/24 -j nixos-fw-accept
+    iptables -A nixos-fw -p tcp --dport 22 -s 192.168.1.0/24 -j nixos-fw-accept
   '';
 
   # The workstation for the flake: nix, git, ssh, and enough tooling to build.

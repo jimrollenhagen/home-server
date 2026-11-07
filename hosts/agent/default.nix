@@ -15,8 +15,17 @@
 
   # mkForce because guest.nix's list merges rather than replaces.
   networking.firewall.allowedTCPPorts = lib.mkForce [ ];
-  networking.firewall.extraInputRules = ''
-    ip saddr { 10.10.10.0/24, 192.168.1.0/24 } tcp dport 22 accept
+
+  # The iptables backend's hook, and it runs before the final reject.
+  #
+  # NOT `extraInputRules`: that option is declared only in
+  # firewall-nftables.nix, so with the default iptables backend
+  # (networking.nftables.enable = false) setting it is silently ignored —
+  # which on this machine, where allowedTCPPorts is empty, meant sshd was
+  # unreachable from everywhere.
+  networking.firewall.extraCommands = ''
+    iptables -A nixos-fw -p tcp --dport 22 -s 10.10.10.0/24 -j nixos-fw-accept
+    iptables -A nixos-fw -p tcp --dport 22 -s 192.168.1.0/24 -j nixos-fw-accept
   '';
 
   # The workstation for the flake. Everything else it needs is in guest.nix.
