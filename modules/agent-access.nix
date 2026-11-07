@@ -17,10 +17,17 @@ let
     }
   ];
 
-  installScripts = lib.concatMapStrings (c: ''
-    install -m 0755 ${pkgs.writeShellScript "agent-${c.name}" c.script} \
-      /usr/local/sbin/agent-${c.name}
-  '') agentSudo;
+  installScripts =
+    # /usr/local does not exist on NixOS — activation creates /usr/bin for
+    # /usr/bin/env and nothing else — so make the directory before installing
+    # into it. `install -d` creates parents, like mkdir -p.
+    ''
+      install -d -m 0755 /usr/local/sbin
+    ''
+    + lib.concatMapStrings (c: ''
+      install -m 0755 ${pkgs.writeShellScript "agent-${c.name}" c.script} \
+        /usr/local/sbin/agent-${c.name}
+    '') agentSudo;
 in
 {
   imports = [ ./constants.nix ];
