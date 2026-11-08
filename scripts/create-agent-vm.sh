@@ -34,7 +34,7 @@ echo "building the image"
 nix build .#agent-image --out-link "$image"
 
 echo "writing it to /dev/zvol/$zvol"
-qemu-img convert -O raw "$image/nixos.qcow2" "/dev/zvol/$zvol"
+qemu-img convert -O raw "$image/nixos-image-qcow2-26.11.20261030.1c89083-x86_64-linux.qcow2" "/dev/zvol/$zvol"
 
 systemctl restart libvirt-domains
 virsh start agent || true
