@@ -42,6 +42,8 @@
     # The robot's public key, generated on the agent VM after first boot
     # (PLAN-agent.md §4 step 4). Empty is the safe default: no key, no login,
     # on every machine, until the key is committed here.
-    agentKeys = [ ];
+    agentKeys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIENGj+wF0wZcl5VDExnjA+ExMJw6kIHgsvf4un3gIRrE agent@agent"
+    ];
   };
 }
