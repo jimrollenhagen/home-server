@@ -305,6 +305,9 @@ before anything is copied into it.
 
 ## 5. Moving Hermes
 
+The executable order — with the commands and the checks at each step — is `MIGRATION.md`.
+What follows is the reasoning.
+
 ### 5.1 What comes, what does not
 
 `~/.hermes` is 2.4 GB here, but almost all of it is rebuildable.

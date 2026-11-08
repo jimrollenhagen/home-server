@@ -152,6 +152,10 @@
   # Housekeeping
   # ---------------------------------------------------------------------------
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  # Same as the guests: a closure pushed over ssh is refused unless the receiving
+  # user is trusted. jim already has passwordless root here, so this adds nothing
+  # to what he can do — it only lets `nixos-rebuild --target-host jim@hyper` copy.
+  nix.settings.trusted-users = [ "jim" ];
   nix.gc = {
     automatic = true;
     dates = "weekly";

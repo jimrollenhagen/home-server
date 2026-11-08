@@ -337,6 +337,8 @@ Then `virsh start agent`, `virsh console agent`, log in as `jim` / `changeme`, `
 and confirm `hostname -f` is `agent.apps.rollenhagen.me`. The rest — the agent's own key,
 the sudo framework, moving Hermes — is `PLAN-agent.md` §4–§5.
 
+Moving Hermes onto it — the key, the state copy and the cutover — is `MIGRATION.md`.
+
 On hyper, `sudo scripts/create-agent-vm.sh` does the disk and domain steps in one go
 (create the zvol, build the image, write it, define and start); it refuses to overwrite a
 disk that already holds a filesystem unless `FORCE=1`.
@@ -345,13 +347,18 @@ disk that already holds a filesystem unless `FORCE=1`.
 
 ## 7. Day-2
 
-    # host
     nix flake update
-    nixos-rebuild build --flake .#hyper
-    sudo nixos-rebuild switch --flake .#hyper
 
-    # a guest, from your laptop
-    nixos-rebuild switch --flake .#plex --target-host jim@10.20.0.20 --use-remote-sudo
+    scripts/deploy.sh hyper
+    scripts/deploy.sh plex
+    scripts/deploy.sh edge
+    scripts/deploy.sh agent
+
+`scripts/deploy.sh <host> [switch|boot|test]` reads the target's FQDN out of the
+configuration (`networking.fqdn`), builds locally, copies the closure and switches as
+`jim`. Run it from the laptop or from the machine itself — if the hostname matches the
+target it does a plain local switch instead of a remote one. It exits before building if
+it cannot ssh to the target.
 
 Rollback on the host: boot the previous generation in the systemd-boot menu, or
 `sudo nixos-rebuild switch --rollback`.
