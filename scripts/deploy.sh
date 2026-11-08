@@ -3,10 +3,14 @@
 #
 #     scripts/deploy.sh <hyper|plex|edge|agent> [switch|boot|test]
 #
-# Run from a checkout as `jim`. Targets are addressed by FQDN, read out of the
-# configuration itself (`networking.fqdn`), so there is no second address list
-# here to drift from modules/constants.nix. If the target is the machine you are
-# sitting on, it runs a plain local switch instead of building and copying.
+# Run on hyper, from a checkout, as `jim`. Targets are addressed by FQDN, read
+# out of the configuration itself (`networking.fqdn`), so there is no second
+# address list here to drift from modules/constants.nix.
+#
+# The deploy originates on the host, so `hyper` is a plain local switch and the
+# guests are reached over the network — which means the UDM Pro has to allow
+# 10.10.10.10 -> TCP 22 on the apps and edge VLANs. Deploying from the laptop
+# used to come in over the client LAN instead and needed no such rule.
 set -euo pipefail
 
 usage() {
@@ -31,6 +35,8 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 fqdn=$(nix --extra-experimental-features 'nix-command flakes' eval --raw \
   ".#nixosConfigurations.$host.config.networking.fqdn")
 
+# Running on hyper makes `hyper` the local case; the check also keeps the script
+# honest if it is ever run from a guest.
 if [ "$(hostname -s)" = "$host" ]; then
   echo "== $host ($fqdn): this machine — local $action"
   exec sudo nixos-rebuild "$action" --flake ".#$host"

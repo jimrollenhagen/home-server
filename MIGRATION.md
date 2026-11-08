@@ -24,16 +24,20 @@ is **pulled by the VM**, not pushed from the old host. The VM's `agent` key is a
 
 ## 1. Put the key on every machine
 
-From the laptop (or from `hyper` — the script adapts to the host it runs on):
+On `hyper`, from the checkout, as `jim`:
 
     scripts/deploy.sh hyper
     scripts/deploy.sh plex
     scripts/deploy.sh edge
     scripts/deploy.sh agent
 
-Each one builds locally, copies the closure to `jim@<fqdn>`, and switches. The script
-derives the FQDN from the configuration (`networking.fqdn`), so nothing here hardcodes an
-address.
+`hyper` is a local switch; the three guests are built on hyper, copied to `jim@<fqdn>` and
+switched. The script derives the FQDN from the configuration (`networking.fqdn`), so
+nothing here hardcodes an address.
+
+Because the deploy now originates on the host rather than on the laptop, the UDM Pro has
+to permit `10.10.10.10` → TCP 22 on the apps and edge VLANs. If a guest step fails at its
+ssh check, that rule is the first thing to look at.
 
 ## 2. Prove the agent can reach the others
 

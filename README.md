@@ -355,10 +355,11 @@ disk that already holds a filesystem unless `FORCE=1`.
     scripts/deploy.sh agent
 
 `scripts/deploy.sh <host> [switch|boot|test]` reads the target's FQDN out of the
-configuration (`networking.fqdn`), builds locally, copies the closure and switches as
-`jim`. Run it from the laptop or from the machine itself — if the hostname matches the
-target it does a plain local switch instead of a remote one. It exits before building if
-it cannot ssh to the target.
+configuration (`networking.fqdn`), builds on hyper, copies the closure and switches as
+`jim`. Run it **on hyper**: hyper is then a plain local switch and the guests are reached
+over the network. That path needs the UDM Pro to allow `10.10.10.10` → TCP 22 on the apps
+and edge VLANs; deploying from the laptop came in over the client LAN and did not. The
+script exits before building if it cannot ssh to the target.
 
 Rollback on the host: boot the previous generation in the systemd-boot menu, or
 `sudo nixos-rebuild switch --rollback`.
