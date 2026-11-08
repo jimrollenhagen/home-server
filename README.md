@@ -326,6 +326,11 @@ It is a normal guest except for two things, both in `hosts/agent/default.nix`:
 1. sshd accepts `10.10.10.0/24` and `192.168.1.0/24` only — `guest.nix` opens 22 to
    everyone, and this one uses `mkForce` to replace that.
 2. It carries `git`, `nix-output-monitor` and a bigger store.
+3. It runs Hermes as the `hermes-agent` systemd service, from the upstream flake's NixOS
+   module (`modules/hermes-agent.nix`), as the `agent` user, with `HERMES_HOME` at
+   `/home/agent/.hermes`. The configuration is `hermes/config.yaml` in this repo: the
+   module installs it on every activation and refuses runtime edits, so a setting change
+   is an edit, a commit, and `scripts/deploy.sh agent`.
 
 Before first boot, on the UDM Pro:
 

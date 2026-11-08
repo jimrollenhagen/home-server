@@ -5,6 +5,8 @@
 # VLAN and the client LAN only (guest.nix opens 22 to everyone else).
 { lib, pkgs, net, ... }:
 {
+  imports = [ ../../modules/hermes-agent.nix ];
+
   networking.hostName = "agent";
   networking.domain = net.agent.domain;   # agent.apps.rollenhagen.me
 

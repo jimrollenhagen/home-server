@@ -305,16 +305,41 @@ before anything is copied into it.
 
 ## 5. Moving Hermes
 
-The executable order — with the commands and the checks at each step — is `MIGRATION.md`.
-What follows is the reasoning.
+The executable order, with the commands and a check per step, is `MIGRATION.md`. What
+follows is the reasoning.
 
-### 5.1 What comes, what does not
+### 5.1 The service, not an installer
+
+Hermes runs from the upstream flake's NixOS module (`modules/hermes-agent.nix`), not
+`curl | bash`: a hardened systemd unit, restarted on boot, with no venv to drift. Two
+properties of that module shaped the configuration:
+
+- **`configFile`** copies a config.yaml verbatim on every activation, so the existing
+  132 KB config moves into this repo as `hermes/config.yaml` rather than being retyped as
+  Nix options. It also means `hermes config set` is refused while the module manages the
+  file (it writes a `.managed` marker): a setting change is an edit here plus
+  `scripts/deploy.sh agent`.
+- **The unit's `HOME` is `stateDir`, not the account's passwd home.** `stateDir =
+  "/home/agent"` is therefore what lets `ssh` and `git` inside the agent find
+  `/home/agent/.ssh` and the checkout; `HERMES_HOME` lands at `/home/agent/.hermes`, the
+  same layout the installer would have produced.
+
+Secrets stay out of the repo: `.env` is not managed by the module (no `environmentFiles`
+yet), so it is copied in and owned by Hermes as it is today. Moving it to sops-nix/agenix
+is a later step, not this one.
+
+Upstream calls Nix a Tier 2 platform — best-effort, `main` may break the package. That is
+acceptable here for one reason: a broken bump is a *failed build*, and the fallback is the
+previous generation or a pinned `flake.lock`. It also costs build time: the package is a
+uv2nix closure, so the first build (and each Hermes bump) is 500-odd derivations, which is
+why it builds on hyper rather than in the VM.
+
+### 5.2 What comes, what does not
 
 `~/.hermes` is 2.4 GB here, but almost all of it is rebuildable.
 
 | copy | why |
 |---|---|
-| `config.yaml` | 132 KB, the whole configuration. No `/home/jim` paths in it. |
 | `.env`, `auth.json` | API keys and OAuth tokens. Secrets — ssh only, `chmod 600`, never git. |
 | `SOUL.md` | identity/persona. |
 | `memories/` | 12 KB. |
@@ -326,51 +351,39 @@ What follows is the reasoning.
 
 | skip | why |
 |---|---|
-| `cache/` 294 MB, `installs/` 120 MB, `tools/` 1.5 GB, `hermes-agent/` 572 MB | installer and first-run rebuild all of it |
+| `config.yaml` | now `hermes/config.yaml` in this repo; the module installs it, and a copied one would be overwritten on the next activation anyway |
+| `cache/` 294 MB, `installs/` 120 MB, `tools/` 1.5 GB, `hermes-agent/` 572 MB | the Nix package replaces all of it |
 | `logs/`, `audio_cache/`, `image_cache/`, `telemetry/` | not state |
-
-### 5.2 On the agent VM
-
-```
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
-```
-
-as `agent` (creates `~/.local/bin/hermes` and `~/.hermes`), then overwrite `~/.hermes`
-with the copy. Run `hermes doctor` and `hermes config get model` before trusting it.
 
 ### 5.3 The copy
 
-Gateway stopped on the source first (§5.4), then from `agent1`:
+Pulled by the VM (it can reach `agent1`; `agent1` cannot route to the lab), with the old
+gateway stopped so `state.db` and its WAL are quiet:
 
 ```
 rsync -aHAX --info=progress2 \
-  ~/.hermes/config.yaml ~/.hermes/.env ~/.hermes/auth.json ~/.hermes/SOUL.md \
-  ~/.hermes/memories ~/.hermes/skills ~/.hermes/plugins ~/.hermes/hooks \
-  ~/.hermes/backups ~/.hermes/cron ~/.hermes/state.db* ~/.hermes/kanban.db* \
-  ~/.hermes/projects.db \
-  agent@10.20.0.30:/home/agent/.hermes/
+  -e 'ssh -o StrictHostKeyChecking=accept-new' \
+  --exclude config.yaml --exclude cache --exclude installs --exclude tools \
+  --exclude hermes-agent --exclude logs --exclude audio_cache --exclude image_cache \
+  --exclude telemetry --exclude models_dev_cache.json \
+  jim@agent1.jroll.dev:/home/jim/.hermes/ /home/agent/.hermes/
 ```
 
-Then on the VM: `chmod 600 ~/.hermes/.env ~/.hermes/auth.json`, and
-`chown -R agent:users ~/.hermes` (the rsync already preserves ownership by name, but
-check it).
+`rsync` as `agent` leaves the files owned by `agent`, and the module's activation chowns
+`HERMES_HOME` to the service user regardless.
 
 ### 5.4 Cutover, in this order
 
-1. `hermes gateway stop` on `agent1`; confirm `gateway.pid` is gone.
-2. Copy (§5.3), `hermes doctor`, then `hermes chat -q "hostname"` on the VM — expect
-   `agent`.
-3. Confirm memories and skills are present (`ls ~/.hermes/memories`,
-   `hermes skills list`).
-4. Leave `agent1` running but with no gateway for a week. **Do not run both**: they share
-   `auth.json` and `install_id`, and the moment a messaging platform is added, two
-   gateways with one identity means one of them silently loses messages.
-5. After a week with the VM up and Hermes working: power off and destroy `agent1`.
-
-Optional, only if you want the agent reachable when you are not ssh'd in: a
-`systemd.services.hermes-gateway` unit as `agent` with `Restart=always`. Not included
-above — today the gateway only exists to idle-serve this CLI, and no messaging platform is
-configured (`channel_directory.json` is empty).
+1. `hermes gateway stop` on `agent1`; confirm `gateway.pid` is gone. This is the only
+   downtime, and it is what makes the copy consistent.
+2. Copy (§5.3).
+3. `scripts/deploy.sh agent` — activation installs `config.yaml` from the repo, writes the
+   `.managed` marker, chowns `HERMES_HOME`, and starts the unit.
+4. Verify: `systemctl status hermes-agent`, `journalctl -u hermes-agent -n 50`,
+   `hermes chat -q "hostname"` → `agent`, `ls ~/.hermes/memories`, `hermes skills list`.
+5. Leave `agent1` powered off but intact for a week. Rollback is starting `hermes` there
+   again — its state is untouched by the copy. **Never run both**: they share `auth.json`
+   and `install_id`.
 
 ## 6. What the agent can and cannot do afterwards
 
@@ -416,8 +429,8 @@ configured (`channel_directory.json` is empty).
 
 - VM backups, snapshots of `agent-os`. The VM is disposable: config is in git, state is
   the `~/.hermes` copy. If it dies, rebuild and re-copy.
-- A persistent Hermes gateway service (§5.4).
-- `sops`/`age` for the secrets in the repo.
+- `sops`/`age` for the secrets: `.env` is a plain file on the VM today, and the module's
+  `environmentFiles` is where it would move.
 - The deploy automation: `agent-activate`, `trusted-users = [ "agent" ]` on each target,
   and `scripts/deploy.sh`. Its own plan, reviewed as the root grant it is. Until then the
   agent can write and push config but not apply it.

@@ -8,6 +8,14 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Hermes Agent's own flake: the NixOS module that runs the gateway as a
+    # systemd service. nixpkgs follows ours so there is one nixpkgs evaluation,
+    # and its other inputs (uv2nix, pyproject-nix) follow that nixpkgs too.
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = { self, nixpkgs, disko, ... }@inputs:
