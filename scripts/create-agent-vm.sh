@@ -34,7 +34,14 @@ echo "building the image"
 nix build .#agent-image --out-link "$image"
 
 echo "writing it to /dev/zvol/$zvol"
-qemu-img convert -O raw "$image/nixos-image-qcow2-26.11.20261030.1c89083-x86_64-linux.qcow2" "/dev/zvol/$zvol"
+# The file name carries the nixpkgs revision
+# (nixos-image-qcow2-<version>-<system>.qcow2), so find it rather than pin it.
+qcow2=$(find "$image" -maxdepth 1 -name '*.qcow2' -print -quit)
+if [ -z "$qcow2" ]; then
+  echo "no .qcow2 under $image" >&2
+  exit 1
+fi
+qemu-img convert -O raw "$qcow2" "/dev/zvol/$zvol"
 
 systemctl restart libvirt-domains
 virsh start agent || true

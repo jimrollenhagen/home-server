@@ -275,7 +275,7 @@ before anything is copied into it.
    ```
    nix build .#agent-image --out-link result-agent     # on hyper
    sudo zfs create -V 64G ark/vm/agent-os
-   sudo qemu-img convert -O raw result-agent/nixos.qcow2 /dev/zvol/ark/vm/agent-os
+   sudo qemu-img convert -O raw result-agent/*.qcow2 /dev/zvol/ark/vm/agent-os
    sudo systemctl restart libvirt-domains
    sudo virsh start agent && sudo virsh console agent
    ```

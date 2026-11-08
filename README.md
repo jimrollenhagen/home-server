@@ -201,12 +201,14 @@ single-admin box and avoids the group chgrp entirely.
     nix build .#edge-image --out-link result-edge
     nix build .#agent-image --out-link result-agent
 
-Each produces `result-*/nixos.qcow2`. (Equivalent native invocation:
-`nixos-rebuild build-image --flake .#plex --image-variant qemu`.) Write them into the zvols:
+Each produces a directory holding one qcow2 whose name carries the nixpkgs revision
+(`nixos-image-qcow2-26.11.<date>.<rev>-x86_64-linux.qcow2`), so glob it. (Equivalent native
+invocation: `nixos-rebuild build-image --flake .#plex --image-variant qemu`.) Write them
+into the zvols:
 
-    sudo qemu-img convert -O raw result-plex/nixos.qcow2 /dev/zvol/ark/vm/plex-os
-    sudo qemu-img convert -O raw result-edge/nixos.qcow2 /dev/zvol/ark/vm/edge-os
-    sudo qemu-img convert -O raw result-agent/nixos.qcow2 /dev/zvol/ark/vm/agent-os
+    sudo qemu-img convert -O raw result-plex/*.qcow2 /dev/zvol/ark/vm/plex-os
+    sudo qemu-img convert -O raw result-edge/*.qcow2 /dev/zvol/ark/vm/edge-os
+    sudo qemu-img convert -O raw result-agent/*.qcow2 /dev/zvol/ark/vm/agent-os
 
 The zvols themselves are created by hand first (`zfs create -V 64G ark/vm/plex-os`, and
 the same for `edge-os` at 32 G and `agent-os` at 64 G).
